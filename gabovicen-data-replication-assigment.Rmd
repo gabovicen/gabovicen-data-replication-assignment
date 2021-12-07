@@ -1,0 +1,296 @@
+---
+title: "Replica"
+author: "Gabriel Vicencio"
+date: "11/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### PCA and cluster analysis replication in R
+
+
+## Introduction
+
+This study will seek to compare two statistical analyzes performed with the same data set, but with different programs. On the one hand, the original work by Vicencio (2019) was carried out using the JMP statistics program. The replication of this master's work will be through program R. The same data will be used and the same graphs will be sought, which will make it possible to buy the two sets of results and thus identify the benefits and disadvantages of each of the programs.
+
+The work of Vicencio (2019) sought, as the first approach to its final objective, to identify if it is possible to distinguish different clusters from the same obsidian deposit. Vicencio collected a total of 334 obsidian samples from a 120km2 region, all related to the El Paredón deposit. To achieve his first objective, the author performed a series of PCA-type analyzes and k-means clusters using the 334 samples. 
+A previous geochemical analysis was made using X-ray fluorescence, providing semi-quantitative information, given in parts per million (ppm) of ten elements: Mn, Fe, Zn, Ga, Th, Rb, Sr, Y, Zr, and Nb.
+
+These two statistical analyzes will be carried out with the R program to compare the results of the two studies.
+
+First of all the libraries and dataset must be loaded.
+
+```{r}
+library(curl)
+library(MASS)
+library(ggplot2)
+library(factoextra)
+library(car)
+```
+
+upload Data
+```{r}
+f <- curl("https://raw.githubusercontent.com/gabovicen/Replica/main/Replica_R.2.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+```{r}
+summary(d)
+```
+
+```{r}
+str(d)
+```
+
+First, we can do a scatter plot with the ten elements to see how the 334 samples can be distributed within each other.
+
+```{r}
+scatterplotMatrix(~ Fe + Zn + Ga + Th + Rb + Sr + Y + Zr + Nb, data=d,legend = TRUE,smooth = list(method=gamLine),diagonal = TRUE,plot.points = TRUE)
+```
+```{r}
+![](https://https://github.com/gabovicen/Replica/blob/main/Figure%201.jpg)
+```
+
+
+<center> <img src = "https://github.com/gabovicen/Replica/blob/main/Figure%201.jpg"> </center>
+
+As we can see
+
+
+```{r}
+str(d)
+d[2]<-as.factor(d$Site)
+plot(d$Site, d$Sr, main = "General Plot", ylab = "Sr")
+```
+
+
+```{r}
+str(d)
+d[2]<-as.factor(d$Site)
+plot(d$Site, d$Y, main = "General Plot", ylab = "Y")
+```
+
+
+```{r}
+str(d)
+d[2]<-as.factor(d$Site)
+plot(d$Site, d$Zr, main = "General Plot", ylab = "Zr")
+```
+
+http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-r-prcomp-vs-princomp/
+
+
+## Principal Component Analysis in R
+
+# Arguments for prcomp():
+x: a numeric matrix or data frame
+scale: a logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place
+Arguments for princomp():
+x: a numeric matrix or data frame
+cor: a logical value. If TRUE, the data will be centered and scaled before the analysis
+scores: a logical value. If TRUE, the coordinates on each principal component are calculated
+
+
+```{r}
+library("factoextra")
+```
+Using the same data set
+
+```{r}
+data(d)
+XRF.elements <- d[1:12, 3:12]
+head(d[, 1:12])
+```
+
+## Compute PCA in R using prcomp()
+
+  1. Compute PCA
+```{r}
+res.pca <- prcomp(XRF.elements, scale = TRUE)
+```
+
+  2.Visualize eigenvalues (scree plot). Show the percentage of variances explained by each principal component.
+
+```{r}
+fviz_eig(res.pca)
+get_eig(res.pca)
+```
+  3. Graph of individuals. Individuals with a similar profile are grouped together.
+
+```{r}
+fviz_pca_ind(res.pca,
+             col.ind = "cos2", # Color by the quality of representation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+  4.    Graph of variables. Positive correlated variables point to the same side of the plot. Negative correlated variables point to opposite sides of the graph.
+
+```{r}
+fviz_pca_var(res.pca,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+  Here we see that most of the elements (variables) point to the same direction.
+  
+  
+  5.    Biplot of individuals and variables
+
+```{r}
+fviz_pca_biplot(res.pca, repel = TRUE,
+                col.var = "#2E9FDF", # Variables color
+                col.ind = "#696969"  # Individuals color
+                )
+```
+  if I would like to predict the new samples inside the two PC's.
+
+```{r}
+ind.sup.coord <- predict(res.pca, newdata = ind.sup)
+ind.sup.coord[, 1:3]
+```
+
+```{r}
+# Plot of active individuals
+p <- fviz_pca_ind(res.pca, repel = TRUE)
+# Add supplementary individuals
+fviz_add(p, ind.sup.coord, color ="blue")
+```
+
+```{r}
+ind.scaled <- scale(ind.sup, 
+                    center = res.pca$center,
+                    scale = res.pca$scale)
+# Coordinates of the individividuals
+coord_func <- function(ind, loadings){
+  r <- loadings*ind
+  apply(r, 2, sum)
+}
+pca.loadings <- res.pca$rotation
+ind.sup.coord <- t(apply(ind.scaled, 1, coord_func, pca.loadings ))
+ind.sup.coord[, 1:3]
+```
+
+
+
+
+## CLUSTER ANALYSIS
+
+
+```{r}
+library(rattle.data)
+library(flexclust)
+```
+
+```{r}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/gabovicen/Replica/main/Replica_R.2.csv")
+clusterdata <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(clusterdata)
+```
+
+```{r}
+ds<- scale(clusterdata[3:12][-1])
+```
+As a first glipse, we can plot the cuantitative data to see a general pattern for the cluster analysis.
+
+
+```{r}
+plot(ds)
+```
+
+
+```{r}
+plot1 <- function(data = ds, nc=6, seed=123456){ 
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")
+  }
+```
+
+```{r}
+plot1(ds)
+```
+
+
+```{r}
+library(NbClust)
+set.seed(1234)
+devAskNewPage(ask=TRUE)
+```
+
+```{r}
+nc1<-NbClust(ds, min.nc=2, max.nc=6, method="kmeans") 
+```
+
+
+```{r}
+set.seed(12)
+fit.kmseed<-kmeans(ds, 2, nstart=25) # performs the k-means cluster analysis
+fit.kmseed$size
+```
+
+
+```{r}
+fit.kmseed$centers
+```
+
+```{r}
+# cross-tabulation of type and cluster membership:
+ct.kmseed<-table(clusterdata$Site, fit.kmseed$cluster)
+ct.kmseed
+```
+
+
+```{r}
+library(flexclust)
+randIndex(ct.kmseed)
+```
+
+```{r}
+fit.kmseed$cluster # these are each of the clusters
+```
+
+
+```{r}
+library(cluster)
+clusplot(ds, fit.kmseed$cluster, main='2D Representation of the Cluster Solution',
+         color=TRUE, shade=TRUE, plotchar = TRUE, labels=2, lines=0)
+```
+```{r}
+set.seed(12)
+fit.kmseed<-kmeans(ds, 3, nstart=25) # performs the k-means cluster analysis
+fit.kmseed$size
+```
+
+```{r}
+fit.kmseed$centers
+```
+
+```{r}
+# cross-tabulation of type and cluster membership:
+ct.kmseed<-table(clusterdata$Site, fit.kmseed$cluster)
+ct.kmseed
+```
+
+```{r}
+library(flexclust)
+randIndex(ct.kmseed)
+```
+```{r}
+fit.kmseed$cluster # these are each of the clusters
+```
+
+```{r}
+library(cluster)
+clusplot(ds, fit.kmseed$cluster, main='2D Representation of the Cluster Solution',
+         color=TRUE, shade=TRUE, plotchar = TRUE, labels=2, lines=0)
+```
+
