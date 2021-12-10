@@ -1,5 +1,5 @@
 ---
-title: "Replica"
+title: "Replication Assignment"
 author: "Gabriel Vicencio"
 date: "11/12/2021"
 output: html_document
@@ -9,17 +9,20 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### PCA and cluster analysis replication in R
+## PCA and cluster analysis replication in R
 
 
-## Introduction
+### Introduction
 
-This study will seek to compare two statistical analyzes performed with the same data set, but with different programs. On the one hand, the original work by Vicencio (2019) was carried out using the JMP statistics program. The replication of this master's work will be through program R. The same data will be used and the same graphs will be sought, which will make it possible to buy the two sets of results and thus identify the benefits and disadvantages of each of the programs.
+This study will seek to compare two statistical analyzes performed with the same data set, but with different programs. On the one hand, the original work by Vicencio (2019) was carried out using the JMP statistics program. The replication of this research will be through the program Rstudio. The same data will be used and the same graphs will be sought, which will make it possible to compare the two sets of results and thus identify the benefits and disadvantages of each of the programs.
 
 The work of Vicencio (2019) sought, as the first approach to its final objective, to identify if it is possible to distinguish different clusters from the same obsidian deposit. Vicencio collected a total of 334 obsidian samples from a 120km2 region, all related to the El Paredón deposit. To achieve his first objective, the author performed a series of PCA-type analyzes and k-means clusters using the 334 samples. 
 A previous geochemical analysis was made using X-ray fluorescence, providing semi-quantitative information, given in parts per million (ppm) of ten elements: Mn, Fe, Zn, Ga, Th, Rb, Sr, Y, Zr, and Nb.
 
-These two statistical analyzes will be carried out with the R program to compare the results of the two studies.
+In his results, Vicencio identifies two main sub-sources,El Paredon and Tres Cabezas, both visible in the statistic analysis and with GIS.
+
+PCA and cluster analysis will be carried out with the R program to compare the results of the two studies.
+
 
 First of all the libraries and dataset must be loaded.
 
@@ -31,9 +34,10 @@ library(factoextra)
 library(car)
 ```
 
-upload Data
+Upload Data
+
 ```{r}
-f <- curl("https://raw.githubusercontent.com/gabovicen/Replica/main/Replica_R.2.csv")
+f <- curl("https://raw.githubusercontent.com/gabovicen/gabovicen-data-replication-assignment/main/Replica_R.2.csv")
 d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)
 ```
@@ -45,47 +49,79 @@ summary(d)
 str(d)
 ```
 
-First, we can do a scatter plot with the ten elements to see how the 334 samples can be distributed within each other.
+  1.    Then, we can do a scatter plot with the ten elements to see how the 334 samples can be distributed within each other.
 
 ```{r}
 scatterplotMatrix(~ Fe + Zn + Ga + Th + Rb + Sr + Y + Zr + Nb, data=d,legend = TRUE,smooth = list(method=gamLine),diagonal = TRUE,plot.points = TRUE)
 ```
+
+![Figure 1. Scatter plot from Vicencio, side B of the thesis, Vicencio 2019](https://raw.githubusercontent.com/gabovicen/gabovicen-data-replication-assignment/main/Figure%201.png)
+
+
+As can seen from the two figures, the scatter plot analysis is better represented by the R analysis. It can be seen more clearly how the formation of two groups can already be seen from this scatter plot distribution. The elements Y and Zr the best representatives for dispersion.
+
+
+### Ploting trace elements
+
+
+With the scatter plot matrix, Vicencio (2019) identifies specific elements that can reveal a better distribution pattern between the two sub-sources, being: Zn, Sr, Y, Zr, and Nb.
+
+Let's see how these elements are plotted. 
+
+
+a) Zinc (Zn)
+
 ```{r}
-![](https://https://github.com/gabovicen/Replica/blob/main/Figure%201.jpg)
-```
-
-
-<center> <img src = "https://github.com/gabovicen/Replica/blob/main/Figure%201.jpg"> </center>
-
-As we can see
-
-
-```{r}
-str(d)
 d[2]<-as.factor(d$Site)
-plot(d$Site, d$Sr, main = "General Plot", ylab = "Sr")
+plot(d$Site, d$Zn, main = "Zn Plot", ylab = "Zn")
 ```
-
+  
+  b) Strontium (Sr)
 
 ```{r}
-str(d)
 d[2]<-as.factor(d$Site)
-plot(d$Site, d$Y, main = "General Plot", ylab = "Y")
+plot(d$Site, d$Sr, main = "Sr Plot", ylab = "Sr")
 ```
-
+  
+  
+  c) Yttrium (Y)
 
 ```{r}
-str(d)
 d[2]<-as.factor(d$Site)
-plot(d$Site, d$Zr, main = "General Plot", ylab = "Zr")
+plot(d$Site, d$Y, main = "Y Plot", ylab = "Y")
+```
+  
+  
+  d) Zirconium (Zr)
+
+```{r}
+d[2]<-as.factor(d$Site)
+plot(d$Site, d$Zr, main = "Zr Plot", ylab = "Zr")
 ```
 
-http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-r-prcomp-vs-princomp/
+  
+  
+  e) Niobium (Nb)
+
+```{r}
+d[2]<-as.factor(d$Site)
+plot(d$Site, d$Nb, main = "Nb Plot", ylab = "Nb")
+```
+
+```{r}
+##http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-r-prcomp-vs-princomp/
+```
 
 
-## Principal Component Analysis in R
 
-# Arguments for prcomp():
+### Principal Component Analysis in R
+
+Principal component analysis (PCA) allows us to summarize and to visualize the information in a data set containing individuals/observations described by multiple inter-correlated quantitative variables. Each variable could be considered as a different dimension.
+
+Principal component analysis is used to extract the important information from a multivariate data table and to express this information as a set of few new variables called principal components. These new variables correspond to a linear combination of the originals (Kassambara 2017)
+
+
+##### Arguments for prcomp():
 x: a numeric matrix or data frame
 scale: a logical value indicating whether the variables should be scaled to have unit variance before the analysis takes place
 Arguments for princomp():
@@ -97,7 +133,6 @@ scores: a logical value. If TRUE, the coordinates on each principal component ar
 ```{r}
 library("factoextra")
 ```
-Using the same data set
 
 ```{r}
 data(d)
@@ -105,7 +140,7 @@ XRF.elements <- d[1:12, 3:12]
 head(d[, 1:12])
 ```
 
-## Compute PCA in R using prcomp()
+#### Compute PCA in R using prcomp()
 
   1. Compute PCA
 ```{r}
@@ -127,6 +162,9 @@ fviz_pca_ind(res.pca,
              repel = TRUE     # Avoid text overlapping
              )
 ```
+  
+  
+  
   4.    Graph of variables. Positive correlated variables point to the same side of the plot. Negative correlated variables point to opposite sides of the graph.
 
 ```{r}
@@ -136,7 +174,12 @@ fviz_pca_var(res.pca,
              repel = TRUE     # Avoid text overlapping
              )
 ```
-  Here we see that most of the elements (variables) point to the same direction.
+```{r}
+#  Here we see that most of the elements (variables) point to the same direction.
+```
+  
+  
+ 
   
   
   5.    Biplot of individuals and variables
@@ -147,10 +190,13 @@ fviz_pca_biplot(res.pca, repel = TRUE,
                 col.ind = "#696969"  # Individuals color
                 )
 ```
+  
+  
+  
   if I would like to predict the new samples inside the two PC's.
 
 ```{r}
-ind.sup.coord <- predict(res.pca, newdata = ind.sup)
+ind.sup.coord <- predict(res.pca, newdata = XRF.elements)
 ind.sup.coord[, 1:3]
 ```
 
@@ -162,7 +208,7 @@ fviz_add(p, ind.sup.coord, color ="blue")
 ```
 
 ```{r}
-ind.scaled <- scale(ind.sup, 
+ind.scaled <- scale(XRF.elements, 
                     center = res.pca$center,
                     scale = res.pca$scale)
 # Coordinates of the individividuals
@@ -175,10 +221,20 @@ ind.sup.coord <- t(apply(ind.scaled, 1, coord_func, pca.loadings ))
 ind.sup.coord[, 1:3]
 ```
 
+![Figure 2. Principal component analysis with the dispersion of two clusters, influenced by the elements: Fe, Sr, Y and Zr. Graph of the three main components that covers 70% of the elemental variance (Vicencio 2019:Figure 39) ](https://raw.githubusercontent.com/gabovicen/gabovicen-data-replication-assignment/main/Figure%202.png)
+
+The representation of the principal components analysis in the research of Vicencio (2019) was a little clearer, due to how the data was represented. Although, there is a differentiation regarding the trace elements with greater influence among the analyzes, how the data is represented with JMP seems to be more useful when trying to see the sample distribution and clustering. 
 
 
 
-## CLUSTER ANALYSIS
+### CLUSTER ANALYSIS
+
+```{r}
+##AN/BI 588: Course Modules-Cluster Analysis
+```
+
+
+Cluster analysis uncovers subgroups of observations within a dataset by reducing a large number of observations to a smaller number of clusters. A cluster is a group of observations that are more similar to each other than they are to the observations in other groups (Arora et al.)
 
 
 ```{r}
@@ -188,24 +244,128 @@ library(flexclust)
 
 ```{r}
 library(curl)
-f <- curl("https://raw.githubusercontent.com/gabovicen/Replica/main/Replica_R.2.csv")
+f <- curl("https://raw.githubusercontent.com/gabovicen/gabovicen-data-replication-assignment/main/Replica_R.2.csv")
 clusterdata <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(clusterdata)
 ```
 
+  1. Lets use the 10 elements for the cluster analysis
+
 ```{r}
-ds<- scale(clusterdata[3:12][-1])
+ds1<- scale(clusterdata[2:12][-1])
 ```
+
+
+As a first glimpse, we can plot the quantitative data to see a general pattern for the cluster analysis.
+
+
+```{r}
+plot(ds1)
+```
+
+
+```{r}
+plot1 <- function(data = ds1, nc=6, seed=123456){ 
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")
+  }
+```
+
+
+
+This will help us dtermine how many clusters we want. nevertheless, as Vicencio's analysis centers on two, we can use this step just as a reference for other options. 
+
+
+```{r}
+plot1(ds1)
+```
+
+
+
+
+The graph we have plotted above has a bend at two, which suggests we should use two clusters, as the original analysis suggested. 
+
+This graph is especially useful if you know nothing about your data set.
+
+
+```{r}
+library(NbClust)
+set.seed(1234)
+devAskNewPage(ask=TRUE)
+```
+
+```{r}
+nc1<-NbClust(ds1, min.nc=2, max.nc=6, method="kmeans") 
+```
+If we want to know the distribution of the 334 samples within the two clusters, we can use this function.
+
+```{r}
+set.seed(12)
+fit.kmseed<-kmeans(ds1, 2, nstart=25) # performs the k-means cluster analysis
+fit.kmseed$size
+```
+
+
+
+
+In this case, 154 samples would be related to one cluster, meanwhile the 180 remaining will be related to the second cluster, revealing the same results as those shown in Vicencio's research. 
+
+
+![Figure 3. K-Means Analysis, side B, Vicencio 2019](https://raw.githubusercontent.com/gabovicen/gabovicen-data-replication-assignment/main/Figure%203.%20K-Means%20Analysis.png)
+
+
+
+
+```{r}
+fit.kmseed$centers
+```
+
+```{r}
+# cross-tabulation of type and cluster membership:
+ct.kmseed<-table(clusterdata$Site, fit.kmseed$cluster)
+ct.kmseed
+```
+
+
+```{r}
+library(flexclust)
+randIndex(ct.kmseed)
+```
+
+```{r}
+fit.kmseed$cluster # these are each of the clusters
+```
+```{r}
+library(cluster)
+clusplot(ds1, fit.kmseed$cluster, main='2D Representation of the Cluster Solution',
+         color=TRUE, shade=TRUE, plotchar = TRUE, labels=2, lines=0)
+```
+  
+  
+  
+  
+  2. Now, lets use Zr and Nb, two elements with special distribution properties, as mentioned by Vicencio (2019).
+
+```{r}
+ds2<- scale(clusterdata[10:12][-1])
+```
+
+
+
 As a first glipse, we can plot the cuantitative data to see a general pattern for the cluster analysis.
 
 
 ```{r}
-plot(ds)
+plot(ds2)
 ```
 
 
 ```{r}
-plot1 <- function(data = ds, nc=6, seed=123456){ 
+plot1 <- function(data = ds2, nc=6, seed=123456){ 
   wss <- (nrow(data)-1)*sum(apply(data,2,var))
   for (i in 2:nc){
     set.seed(seed)
@@ -216,7 +376,7 @@ plot1 <- function(data = ds, nc=6, seed=123456){
 ```
 
 ```{r}
-plot1(ds)
+plot1(ds2)
 ```
 
 
@@ -227,17 +387,18 @@ devAskNewPage(ask=TRUE)
 ```
 
 ```{r}
-nc1<-NbClust(ds, min.nc=2, max.nc=6, method="kmeans") 
+nc1<-NbClust(ds2, min.nc=2, max.nc=6, method="kmeans") 
 ```
 
 
 ```{r}
 set.seed(12)
-fit.kmseed<-kmeans(ds, 2, nstart=25) # performs the k-means cluster analysis
+fit.kmseed<-kmeans(ds2, 2, nstart=25) # performs the k-means cluster analysis
 fit.kmseed$size
 ```
 
-
+The same sample distribution as in ds1(10 elements
+)
 ```{r}
 fit.kmseed$centers
 ```
@@ -261,12 +422,29 @@ fit.kmseed$cluster # these are each of the clusters
 
 ```{r}
 library(cluster)
-clusplot(ds, fit.kmseed$cluster, main='2D Representation of the Cluster Solution',
+clusplot(ds2, fit.kmseed$cluster, main='2D Representation of the Cluster Solution',
          color=TRUE, shade=TRUE, plotchar = TRUE, labels=2, lines=0)
 ```
+
+
+
+It is clear that with Zr and Nb the clutsers are better defined.
+
+
+This result is close to what we see in the original work. The use of trace elements with greater influence on the distribution and conglomeration of groups provides a better result.
+
+
+![Figure 4. Bivariate graph of the two main components, with clustering ellipses at 95 percent probability, made from the two trace elements with the greatest variation: Sr and Zr, Vicencio 2019:Figure 44)](https://raw.githubusercontent.com/gabovicen/gabovicen-data-replication-assignment/main/Figure%204.png)
+
+  3. As the last excercise, lets see if its posible to identify three clusters.
+
+```{r}
+ds3<- scale(clusterdata[10:12][-1])
+```
+
 ```{r}
 set.seed(12)
-fit.kmseed<-kmeans(ds, 3, nstart=25) # performs the k-means cluster analysis
+fit.kmseed<-kmeans(ds3, 3, nstart=25) # performs the k-means cluster analysis
 fit.kmseed$size
 ```
 
@@ -290,7 +468,40 @@ fit.kmseed$cluster # these are each of the clusters
 
 ```{r}
 library(cluster)
-clusplot(ds, fit.kmseed$cluster, main='2D Representation of the Cluster Solution',
+clusplot(ds3, fit.kmseed$cluster, main='2D Representation of the Cluster Solution',
          color=TRUE, shade=TRUE, plotchar = TRUE, labels=2, lines=0)
 ```
+
+
+
+Even if we try to find three clusters, only two are representative. 
+
+
+
+
+
+### Conclusions
+
+
+As shown in the work by Vicencio (2019), it is possible to identify at least two clusters from the distribution of the 334 geological samples from the El Paredón deposit. I found the two statistical programs extremely useful in representing these data. Although I found some improvements in the way JMP displays the results. I know that the shortcomings of not being able to represent the results in R come from my abilities to handle the program, and I'm sure from what we have seen during class, that in R we as researchers can have more control over the statistical analysis of our work.
+
+
+
+
+
+
+
+
+
+#### References
+
+Arora, Aarti, Andrew Mark, Natalie Robinson, Audrey Tjahjadi (with modifications by Christopher A. Schmitt)
+ Module 25: Cluster Analysis. AN/BI 588: Course Modules. https://fuzzyatelin.github.io/bioanth-stats/module-25/module-25.html
+ 
+ 
+Kassambara, Alboukadel 
+ 2017 Principal Component Analysis in R: prcomp vs princomp. http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-r-prcomp-vs-princomp/#general-methods-for-principal-component-analysis
+
+Vicencio, A. Gabriel
+2019	El Paredón y Tlaxcala: un estudio regional de un yacimiento de obsidiana durante el Formativo Medio y el Formativo Tardío en Tlaxcala. Unpublished Tesis inédita de Maestría, Universidad Nacional Autónoma de México, Mexico City.
 
